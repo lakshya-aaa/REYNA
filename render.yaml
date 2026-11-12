@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: reyna-backend
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    # Render Free web services do not support preDeployCommand.
+    # Alembic reads DIRECT_URL (direct connection, without '-pooler'), while
+    # FastAPI/Uvicorn reads DATABASE_URL (pooled connection, with '-pooler').
+    startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: ENABLE_DOCS
+        value: "false"
+      - key: LOG_LEVEL
+        value: INFO
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "60"
+      - key: CORS_ORIGINS
+        value: ""
+      - key: SECRET_KEY
+        generateValue: true
+      - key: REYNA_BOOTSTRAP_TOKEN
+        sync: false
+      # Neon POOLED connection string (hostname contains '-pooler') for FastAPI runtime.
+      - key: DATABASE_URL
+        sync: false
+      # Neon DIRECT connection string (hostname without '-pooler') for Alembic migrations.
+      - key: DIRECT_URL
+        sync: false
